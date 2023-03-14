@@ -16,7 +16,7 @@ $f = FName::make('/easy/path/file.ext');            # /easy/path/file.ext
 $f->path('/var/www')->body('%_readme')->ext('txt'); # /var/www/file_readme.txt
 ```
 
-## General info
+## General info & Terminology
 A filename has three parts. A **path**, a **filename body**, and an **extension**. You can manipulate each without affecting the others. Each part can be empty.
 
 **PATH**
