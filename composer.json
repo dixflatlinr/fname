@@ -1,0 +1,32 @@
+{
+    "name": "dixflatlinr/fname",
+    "type": "library",
+    "description": "This handy filename manipulation library makes it easy to manipulate filenames",
+    "keywords": ["file", "filename", "manipulation", "handy"],
+    "homepage": "https://github.com/dixflatlinr/fname",
+    "license": "BSD-3-Clause",
+
+    "authors": [
+        {
+            "name": "DF",
+            "email": "dixie.flatline@pm.me"
+        }
+    ],
+
+    "autoload": {
+        "psr-4": {"DF\\App\\FName\\": "src/"}
+    },
+
+    "scripts": {
+        "test": "phpunit"
+    },
+
+    "require": {
+        "php": ">=7.4.0",
+        "dixflatlinr/preg_return": "^1.0"
+    },
+
+    "require-dev": {
+        "phpunit/phpunit": "^9"
+    }
+}
