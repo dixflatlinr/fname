@@ -4,7 +4,7 @@ namespace DF\App\FName;
 
 use DF\App\Helper\RX;
 
-abstract class FNameBase
+abstract class FNameBase implements FNameValidatorInterface
 {
     use GetPropertiesStrict;
 
@@ -24,15 +24,15 @@ abstract class FNameBase
     protected string $body;
     protected string $ext;
 
-    private string $filename;
-    private $flags;
+    protected string $filenameOriginal;
+    protected $flags;
 
     public function __construct($filename, $flags = null)
     {
-        $this->filename = $filename;
-
         $this->explode($filename);
         $this->validate();
+
+        $this->filenameOriginal = $filename;
         $this->flags = $flags;
     }
 
@@ -58,6 +58,11 @@ abstract class FNameBase
         $this->validateExtension($this->ext);
     }
 
+    /**
+     * Populates filename parts (path, body, ext) by exploding the provided filename
+     *
+     * @param $filename
+     */
     protected function explode($filename)
     {
         $subject = $filename;
@@ -147,6 +152,19 @@ abstract class FNameBase
     function ext($ext)
     {
         $this->parsePlaceholder($ext, $this->ext);
+
+        $parts = explode('.', $ext);
+
+        //if $ext is txt.gz
+        if (count($parts) > 1)
+        {
+            //ext becomes gz
+            $ext = array_pop($parts);
+
+            //filebody becomes filebody.txt
+            $this->body($this->body . '.' . implode('.', $parts));
+        }
+
         $this->validateExtension($ext);
         $this->ext = $ext;
 

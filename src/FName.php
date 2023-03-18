@@ -2,7 +2,7 @@
 
 namespace DF\App\FName;
 
-class FName extends FNameBase implements FNameValidatorInterface
+class FName extends FNameBase
 {
     function validateExtension($extension)
     {

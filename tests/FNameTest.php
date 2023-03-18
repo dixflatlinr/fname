@@ -127,13 +127,19 @@ final class FNameTest extends TestCase
         $this->assertEquals($filename, (string)FName::make($filename));
     }
 
-    public function test_FName__Wildcards(): void
+    public function test_FName__Placeholders(): void
     {
         //Changing extension
         $filename = '/var/lib/mysql/multi-master.info';
         $f = new FName($filename);
         $f->ext('%2');
         $this->assertEquals('/var/lib/mysql/multi-master.info2', (string)$f);
+
+        $f = new FName($filename);
+        $f->ext('%.gz');
+        $this->assertEquals('multi-master.info', (string)$f->body);
+        $this->assertEquals('gz', (string)$f->ext);
+        $this->assertEquals('/var/lib/mysql/multi-master.info.gz', (string)$f);
 
         //Changing path
         $filename = '/var/lib/mysql/multi-master.info';
@@ -148,7 +154,7 @@ final class FNameTest extends TestCase
         $this->assertEquals('/var/lib/mysql/multi-master-megaking.info', (string)$f);
     }
 
-    public function test_FName__Wildcards_disabled(): void
+    public function test_FName__Placeholders_disabled(): void
     {
         //Changing extension - no wildcards
         $filename = '/var/lib/mysql/multi-master.info';
@@ -189,7 +195,7 @@ final class FNameTest extends TestCase
 
     function extensionValues()
     {
-        return [['ex.ty'],['ex/ty']];
+        return [['ex/ty'],['ex'.chr(0).'ty']];
     }
 
     /**
