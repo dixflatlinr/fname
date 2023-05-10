@@ -2,7 +2,7 @@
     "name": "dixflatlinr/fname",
     "type": "library",
     "description": "This handy filename manipulation library makes it easy to manipulate filenames",
-    "keywords": ["file", "filename", "manipulation", "handy"],
+    "keywords": ["file", "filename", "manipulation", "path", "handy"],
     "homepage": "https://github.com/dixflatlinr/fname",
     "license": "BSD-3-Clause",
 

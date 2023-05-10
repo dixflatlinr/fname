@@ -17,22 +17,22 @@ final class FNameTest extends TestCase
         //A path, no filename
         $filename = '/var/www/whatever/';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['/var/www/whatever/','',''], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['/var/www/whatever/','','',''], [$f->path, $f->body, $f->ext, $f->filename]);
 
         //A path's last segment without an ending slash is interpreted as a filename
         $filename = '/var/www/whatever';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['/var/www/','whatever',''], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['/var/www/','whatever','','whatever'], [$f->path, $f->body, $f->ext, $f->filename]);
 
         //Full path, with filename, without extension
         $filename = '/var/www/whatever/filename';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['/var/www/whatever/','filename',''], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['/var/www/whatever/','filename','','filename'], [$f->path, $f->body, $f->ext, $f->filename]);
 
         //Full path, with filename and extension
         $filename = '/var/www/whatever/filename.ext';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['/var/www/whatever/','filename','ext'], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['/var/www/whatever/','filename','ext','filename.ext'], [$f->path, $f->body, $f->ext, $f->filename]);
     }
 
     public function test_FName__Weirdos(): void
@@ -40,30 +40,30 @@ final class FNameTest extends TestCase
         //double dots is a filename without extension (body only)
         $filename = '..';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['','..',''], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['','..','','..'], [$f->path, $f->body, $f->ext, $f->filename]);
 
         //single dot is a filename without extension (body only)
         $filename = '.';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['','.',''], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['','.','','.'], [$f->path, $f->body, $f->ext, $f->filename]);
 
         //lots of dots is still considered a filename without extension (body only)
         $filename = '......';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['','......',''], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['','......','','......'], [$f->path, $f->body, $f->ext, $f->filename]);
 
         //lots of dots as body with an added extension - last dot is always consumed when separating the extension
         $filename = '......ext';
         $f = new FName($filename);
-        $this->assertEqualsCanonicalizing(['','.....','ext'], [$f->path, $f->body, $f->ext]);
+        $this->assertEqualsCanonicalizing(['','.....','ext','......ext'], [$f->path, $f->body, $f->ext, $f->filename]);
 
         //Multiple dots in filename
         $filename = '/var/www/whatever/manci...neni.meg.a.madarak...ext';
         $f = new FName($filename);
         $this->assertEqualsCanonicalizing
         (
-            ['/var/www/whatever/','manci...neni.meg.a.madarak..','ext'],
-            [$f->path, $f->body, $f->ext]
+            ['/var/www/whatever/','manci...neni.meg.a.madarak..','ext','manci...neni.meg.a.madarak...ext'],
+            [$f->path, $f->body, $f->ext, $f->filename]
         );
 
         //Unicode madness...
@@ -71,8 +71,8 @@ final class FNameTest extends TestCase
         $f = new FName($filename);
         $this->assertEqualsCanonicalizing
         (
-            ['/var/w™ww/whateverḊḋḞ/','very😎😏...ne🌎🌏ni.meg.a.mУФХadarak..','ぴふべ'],
-            [$f->path, $f->body, $f->ext]
+            ['/var/w™ww/whateverḊḋḞ/','very😎😏...ne🌎🌏ni.meg.a.mУФХadarak..','ぴふべ','very😎😏...ne🌎🌏ni.meg.a.mУФХadarak...ぴふべ'],
+            [$f->path, $f->body, $f->ext, $f->filename]
         );
     }
 
@@ -85,46 +85,80 @@ final class FNameTest extends TestCase
         $this->assertEquals($filename, $f->gen('%A'));
 
         $this->assertEqualsCanonicalizing(
-            [$f->gen('%P'),$f->gen('%B'),$f->gen('%E'),$f->gen('%X')],
-            [$f->path, $f->body, $f->ext, '.' . $f->ext]);
+            [$f->gen('%P'),$f->gen('%B'),$f->gen('%E'),$f->gen('%X'), $f->gen('%F')],
+            [$f->path, $f->body, $f->ext, '.' . $f->ext, 'multi-master.info']);
 
         $this->assertEquals('/var/lib/mysql/verynew_multi-master_Filename.info', $f->gen('%Pverynew_%B_Filename%X'));
+
+        //Using %X on a filename without extension
+        $filename = '/var/lib/mysql/filebodyonly';
+        $f = new FName($filename);
+
+        $this->assertEqualsCanonicalizing(
+            [
+                $f->gen('%X'), $f->gen('%B%X')
+            ],
+            [
+                '','filebodyonly'
+            ]
+        );
     }
 
     public function test_FName__Elements(): void
     {
         $filename = '/var/lib/mysql/multi-master.info';
         $f = new FName($filename);
+        $this->assertEquals('multi-master.info', $f->filename);
 
         //Changing extension
         $f->ext('data');
         $this->assertEquals('/var/lib/mysql/multi-master.data', (string)$f);
+        $this->assertEquals('multi-master.data', $f->filename);
 
         //Changing path
         $f->path('');
         $this->assertEquals('multi-master.data', (string)$f);
+        $this->assertEquals('multi-master.data', $f->filename);
 
         //Removing extension
         $f->ext('');
         $this->assertEquals('multi-master', (string)$f);
+        $this->assertEquals('multi-master', $f->filename);
 
         //Removing body, the file will be very empty, this is also possible
         $f->body('');
         $this->assertEquals('', (string)$f);
+        $this->assertEquals('', $f->filename);
+
 
         //Rebuilding file - path must always end with a slash, and path must provide this
         $f->path('/x/y')->body('filebody')->ext('ext');
         $this->assertEquals('/x/y/filebody.ext', (string)$f);
+        $this->assertEquals('filebody.ext', $f->filename);
 
         //Rebuilding file with set shorthand
         $f->set('/a/b/','c','d');
         $this->assertEquals('/a/b/c.d', (string)$f);
+        $this->assertEquals('c.d', $f->filename);
     }
 
     public function test_FName__Static_constructor(): void
     {
         $filename = '/var/lib/mysql/multi-master.info';
         $this->assertEquals($filename, (string)FName::make($filename));
+
+        $filename = '/var/lib/mysql/multi-master.info';
+        $this->assertEquals($filename, (string)FName::makeByParts('/var/lib/mysql','multi-master','info'));
+    }
+
+    public function test_FName__Reset(): void
+    {
+        $filename = '/var/lib/mysql/multi-master.info';
+        $fn = FName::make($filename);
+        $this->assertEquals($filename, (string)$fn);
+
+        $newFilename = '/totally/new/filename.ext';
+        $this->assertEquals($newFilename, (string)$fn->reset($newFilename));
     }
 
     public function test_FName__Placeholders(): void

@@ -24,16 +24,15 @@ abstract class FNameBase implements FNameValidatorInterface
     protected string $body;
     protected string $ext;
 
+    //Helper so filename+ext can be easily accessed
+    protected string $filename;
+
     protected string $filenameOriginal;
     protected $flags;
 
     public function __construct($filename, $flags = null)
     {
-        $this->explode($filename);
-        $this->validate();
-
-        $this->filenameOriginal = $filename;
-        $this->flags = $flags;
+        $this->reset($filename, $flags);
     }
 
     static function make($filename, $flags = null): self
@@ -49,6 +48,17 @@ abstract class FNameBase implements FNameValidatorInterface
         $fn->ext($ext);
 
         return $fn;
+    }
+
+    function reset($filename, $flags = null)
+    {
+        $this->explode($filename);
+        $this->validate();
+
+        $this->filenameOriginal = $filename;
+        $this->flags = $flags;
+
+        return $this;
     }
 
     protected function validate()
@@ -80,6 +90,7 @@ abstract class FNameBase implements FNameValidatorInterface
             $this->ext = '';
             $this->body = $subject;
 
+            $this->feedHelperProperties();
             return;
         }
 
@@ -87,6 +98,8 @@ abstract class FNameBase implements FNameValidatorInterface
         $this->ext = (string)RX::pregReturnReplace('~(?:\.)([^.]+)$~', '', $subject, 1);
         //What remains is the filebody
         $this->body = $subject;
+
+        $this->feedHelperProperties();
     }
 
     /**
@@ -97,6 +110,7 @@ abstract class FNameBase implements FNameValidatorInterface
      *
      * %A - Full filename => /var/www/mancineni_attacks.jpg
      * %P - Path => /var/www/
+     * %F - Filename (body and ext) => mancineni_attacks.jpg
      * %B - Filename body => mancineni_attacks
      * %E - Filename extension without dot => jpg
      * %X - Filename extension with dot => .jpg
@@ -107,9 +121,10 @@ abstract class FNameBase implements FNameValidatorInterface
      */
     function gen(string $fstring)
     {
+        //opt: all the values here are auto acquired for each substitution
         return preg_replace(
-            [ '~%A~', '~%P~', '~%B~', '~%E~', '~%X~' ],
-            [ (string)$this, $this->path, $this->body, $this->ext, '.' . $this->ext ],
+            [ '~%A~', '~%P~', '~%F~', '~%B~', '~%E~', '~%X~' ],
+            [ (string)$this, $this->path, $this->filename,  $this->body, $this->ext, ($this->ext ? '.' : '') . $this->ext ],
             $fstring);
     }
 
@@ -136,6 +151,7 @@ abstract class FNameBase implements FNameValidatorInterface
         $this->smartPathCorrection($path);
         $this->validatePath($path);
         $this->path = $path;
+        $this->feedHelperProperties();
 
         return $this;
     }
@@ -145,6 +161,7 @@ abstract class FNameBase implements FNameValidatorInterface
         $this->parsePlaceholder($body, $this->body);
         $this->validateBody($body);
         $this->body = $body;
+        $this->feedHelperProperties();
 
         return $this;
     }
@@ -167,6 +184,7 @@ abstract class FNameBase implements FNameValidatorInterface
 
         $this->validateExtension($ext);
         $this->ext = $ext;
+        $this->feedHelperProperties();
 
         return $this;
     }
@@ -219,5 +237,26 @@ abstract class FNameBase implements FNameValidatorInterface
     {
         if ( !($this->flags & self::FLAG_DISABLE_SMARTPATH ) )
             $path = preg_replace('~/+~','/', $path);
+    }
+
+    public function feedHelperProperties()
+    {
+        $this->filename = $this->body . ($this->ext ? '.' : '') . $this->ext;
+    }
+
+    /**
+     * Returns an array of all of the file parts
+     *
+     * @return array Of file parts
+     */
+    function getParts()
+    {
+        return
+            [
+                'path' => $this->path,
+                'body' => $this->body,
+                'ext' => $this->ext,
+                'filename' => $this->filename,
+            ];
     }
 }
