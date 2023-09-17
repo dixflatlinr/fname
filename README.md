@@ -38,19 +38,20 @@ A filename has three parts. A **path**, a **filename body**, and an **extension*
 use \DF\App\FName\FName;
 require 'vendor/autoload.php';
 
-$filename = '/hevy/path/filebody.ext';
+$filename = '/hevy/path/filebody.info.ext';
 ```
 
 ### Instancing & querying parts
 ```php
 $f = FName::make($filename);  
 $f = new FName($filename);  
-$f = FName::makeByParts('/hevy/path/','filebody','ext');  
+$f = FName::makeByParts('/hevy/path/','filebody.info','ext');  
   
-(string)$f; # /hevy/path/filebody.ext
+(string)$f; # /hevy/path/filebody.info.ext
 $f->path;   # /hevy/path/
-$f->body;   # filebody
+$f->body;   # filebody.info
 $f->ext;    # ext
+$f->extLong # info.ext
 ```
 ### Manipulating parts
 ```php
@@ -58,6 +59,7 @@ FName::make('/hevy/path/filebody.ext')
 ->path('/var/www')           # /var/www/filebody.ext
 ->body('%.indy')             # /var/www/filebody.indy.ext
 ->ext('mp4');                # /var/www/filebody.indy.mp4
+->filename('newfile.ext')    # /var/www/newfile.ext
 
 FName::make('')
 ->set('/','readme','txt');   # /readme.txt
@@ -70,9 +72,11 @@ FName::make('/var/www/pugs_attacking.jpg')
 /*  
 * %A - Full filename => /var/www/pugs_attacking.jpg  
 * %P - Path => /var/www/  
+* %F - Filename (body and ext) => pugs_attacking.jpg
 * %B - Filename body => pugs_attacking  
 * %E - Filename extension without dot => jpg  
 * %X - Filename extension with dot => .jpg  
+* %L - Filename long extension => jpg
 */
 ```
 ### Flags  
